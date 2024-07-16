@@ -3,12 +3,20 @@ package com.example;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.specification.Argument;
 import io.restassured.specification.RequestSpecification;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,8 +44,9 @@ public class GroupsGetCountersTest {
                 .build();
     }
 
-    @BeforeAll
-    public static void initDefaultQueryParams() {
+    @BeforeEach
+    public void initDefaultQueryParams() {
+        queryParams.clear();
         queryParams.put("application_key", APPLICATION_KEY);
         queryParams.put("format", "json");
         queryParams.put("method", API_METHOD);
@@ -58,8 +67,8 @@ public class GroupsGetCountersTest {
         queryParams.put(SIG_PARAM, calculateSig());
     }
 
-    private RequestSpecification defaultRequest(String ...counters) {
-        addCounterParam("members");
+    private RequestSpecification defaultRequest(String... counters) {
+        addCounterParam(counters);
         addSigParam();
         var request = given()
                 .spec(spec);
@@ -89,9 +98,23 @@ public class GroupsGetCountersTest {
         );
     }
 
-    @Test
-    public void shouldHaveResponseStatus200() {
-        defaultRequest("members")
+    private static Stream<Arguments> getDifferentCounterTypes() {
+        return Stream.of(
+                Arguments.of(List.of("members")),
+                Arguments.of(List.of("members", "moderators")),
+                Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests")),
+                Arguments.of(List.of("new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "promo_on_moderation")),
+                Arguments.of(List.of("suggested_products", "suggested_topics", "themes", "unpublished_topics")),
+                Arguments.of(List.of("videos")),
+                Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests", "links", "maybe", "members", "moderators", "music_tracks", "new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "promo_on_moderation", "suggested_products", "suggested_topics", "themes", "unpublished_topics", "videos"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getDifferentCounterTypes")
+    public void shouldHaveResponseStatus200(List<String> counterTypes) {
+        System.out.println(Arrays.toString(counterTypes.toArray()));
+        defaultRequest(counterTypes.toArray(new String[0]))
                 .when()
                 .get()
                 .then()
