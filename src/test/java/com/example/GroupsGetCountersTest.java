@@ -18,10 +18,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GroupsGetCountersTest {
     private static final String BASE_URL = "https://api.ok.ru/fb.do";
@@ -30,8 +33,13 @@ public class GroupsGetCountersTest {
     private static final String APPLICATION_KEY = "CBKKNNLGDIHBABABA";
     private static final String SESSION_KEY = "-n-LLLOPZM844I5fF2PoFXkMMJUhfiR06u4s52Ebt9ghpFOyOuuFJYQjfHsHEsrK3RrtiNwUo19T0QWpZs65";
     private static final String SESSION_SECRET_KEY = "e47d37e41dd023d2d829549ce3476592";
+
     private static final String COUNTERS_PARAM = "counterTypes";
     private static final String SIG_PARAM = "sig";
+
+    private static final int INVALID_PARAMETER_ERROR_CODE = 100;
+    private static final Pattern INVALID_PARAMETER_MSG_PATTERN = Pattern.compile("PARAM : Invalid parameter");
+
     private static final Map<String, String> queryParams = new HashMap<>();
     private static RequestSpecification spec;
 
@@ -103,21 +111,30 @@ public class GroupsGetCountersTest {
                 Arguments.of(List.of("members")),
                 Arguments.of(List.of("members", "moderators")),
                 Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests")),
-                Arguments.of(List.of("new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "promo_on_moderation")),
+                Arguments.of(List.of("new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products")),
                 Arguments.of(List.of("suggested_products", "suggested_topics", "themes", "unpublished_topics")),
-                Arguments.of(List.of("videos")),
-                Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests", "links", "maybe", "members", "moderators", "music_tracks", "new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "promo_on_moderation", "suggested_products", "suggested_topics", "themes", "unpublished_topics", "videos"))
+                Arguments.of(List.of("promo_on_moderation")), // Test failes on it
+                Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests", "links", "maybe", "members", "moderators", "music_tracks", "new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "suggested_products", "suggested_topics", "themes", "unpublished_topics", "videos"))
         );
     }
 
     @ParameterizedTest
     @MethodSource("getDifferentCounterTypes")
     public void shouldHaveResponseStatus200(List<String> counterTypes) {
-        System.out.println(Arrays.toString(counterTypes.toArray()));
         defaultRequest(counterTypes.toArray(new String[0]))
                 .when()
                 .get()
                 .then()
                 .statusCode(200);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getDifferentCounterTypes")
+    public void checkResponseBody(List<String> counterTypes) {
+        defaultRequest(counterTypes.toArray(new String[0]))
+                .when()
+                .get()
+                .then()
+                .extract().as(GroupsGetCountersDTO.class);
     }
 }
