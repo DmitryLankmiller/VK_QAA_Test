@@ -3,18 +3,14 @@ package com.example;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.specification.Argument;
 import io.restassured.specification.RequestSpecification;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,16 +114,6 @@ public class GroupsGetCountersTest {
         );
     }
 
-    private static Stream<Arguments> getNotExistCounterTypes() {
-        return Stream.of(
-                Arguments.of(List.of("mems")),
-                Arguments.of(List.of("news")),
-                Arguments.of(List.of("suggestedPproducts")),
-                Arguments.of(List.of("rs", "mods")),
-                Arguments.of(List.of("ads", "list", "logs"))
-        );
-    }
-
     @ParameterizedTest
     @MethodSource("getDifferentCounterTypes")
     public void shouldHaveResponseStatus200(List<String> counterTypes) {
@@ -149,6 +135,16 @@ public class GroupsGetCountersTest {
     }
 
 
+    private static Stream<Arguments> getNotExistCounterTypes() {
+        return Stream.of(
+                Arguments.of(List.of("mems")),
+                Arguments.of(List.of("news")),
+                Arguments.of(List.of("suggestedPproducts")),
+                Arguments.of(List.of("rs", "mods")),
+                Arguments.of(List.of("ads", "list", "logs"))
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("getNotExistCounterTypes")
     public void tryGetNotExistCounters(List<String> counterTypes) {
@@ -160,4 +156,6 @@ public class GroupsGetCountersTest {
         assertEquals(INVALID_PARAMETER_ERROR_CODE, error.getCode());
         assertTrue(INVALID_PARAMETER_MSG_PATTERN.matcher(error.getMessage()).find());
     }
+
+
 }
