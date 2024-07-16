@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +35,13 @@ public class GroupsGetCountersTest {
     private static final String SIG_PARAM = "sig";
 
     private static final int INVALID_PARAMETER_ERROR_CODE = 100;
-    private static final Pattern INVALID_PARAMETER_MSG_PATTERN = Pattern.compile("PARAM : Invalid parameter");
+    private static final Pattern INVALID_PARAMETER_MSG_PATTERN = Pattern.compile("PARAM");
+
+    private static final int NOT_FOUND_ERROR_CODE = 300;
+    private static final Pattern NOT_FOUND_MSG_PATTERN = Pattern.compile("NOT_FOUND");
+
+    private static final int INVALID_GROUP_ID_ERROR_CODE = 160;
+    private static final Pattern INVALID_GROUP_ID_MSG_PATTERN = Pattern.compile("PARAM_GROUP_ID ");
 
     private static final Map<String, String> queryParams = new HashMap<>();
     private static RequestSpecification spec;
@@ -55,7 +62,6 @@ public class GroupsGetCountersTest {
         queryParams.put("format", "json");
         queryParams.put("method", API_METHOD);
         queryParams.put("session_key", SESSION_KEY);
-        queryParams.put("group_id", GROUP_ID);
     }
 
     private void addCounterParam(String... counters) {
@@ -74,6 +80,17 @@ public class GroupsGetCountersTest {
     private RequestSpecification defaultRequest(String... counters) {
         addCounterParam(counters);
         addSigParam();
+        queryParams.put("group_id", GROUP_ID);
+        var request = given()
+                .spec(spec);
+        setQueryParamsToRequest(request);
+        return request;
+    }
+
+    private RequestSpecification requestToSpecifiedGroup(String groupId, String... counters) {
+        addCounterParam(counters);
+        addSigParam();
+        queryParams.put("group_id", groupId);
         var request = given()
                 .spec(spec);
         setQueryParamsToRequest(request);
@@ -157,5 +174,30 @@ public class GroupsGetCountersTest {
         assertTrue(INVALID_PARAMETER_MSG_PATTERN.matcher(error.getMessage()).find());
     }
 
+
+    @ParameterizedTest
+    @ValueSource(strings = {"7000000735674","123456789","000"})
+    public void tryGetNotExistGroupCounters(String groupId) {
+        var error = requestToSpecifiedGroup(groupId, "members")
+                .when()
+                .get()
+                .then()
+                .extract().as(ErrorDTO.class);
+        assertEquals(NOT_FOUND_ERROR_CODE, error.getCode());
+        assertTrue(NOT_FOUND_MSG_PATTERN.matcher(error.getMessage()).find());
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(strings = {"kitty","sdDF_@1fg7634f","    "})
+    public void tryGetInvalidGroupCounters(String groupId) {
+        var error = requestToSpecifiedGroup(groupId, "members")
+                .when()
+                .get()
+                .then()
+                .extract().as(ErrorDTO.class);
+        assertEquals(INVALID_GROUP_ID_ERROR_CODE, error.getCode());
+        assertTrue(INVALID_GROUP_ID_MSG_PATTERN.matcher(error.getMessage()).find());
+    }
 
 }
