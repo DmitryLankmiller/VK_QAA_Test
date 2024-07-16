@@ -7,6 +7,7 @@ import io.restassured.specification.RequestSpecification;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,6 +37,7 @@ public class GroupsGetCountersTest {
 
     private static final int INVALID_PARAMETER_ERROR_CODE = 100;
     private static final Pattern INVALID_PARAMETER_MSG_PATTERN = Pattern.compile("PARAM");
+    private static final Pattern MISSING_REQUIRED_PARAMETR_MSG_PATTERN = Pattern.compile("PARAM : Missing required parameter");
 
     private static final int NOT_FOUND_ERROR_CODE = 300;
     private static final Pattern NOT_FOUND_MSG_PATTERN = Pattern.compile("NOT_FOUND");
@@ -126,7 +128,7 @@ public class GroupsGetCountersTest {
                 Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests")),
                 Arguments.of(List.of("new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products")),
                 Arguments.of(List.of("suggested_products", "suggested_topics", "themes", "unpublished_topics")),
-                Arguments.of(List.of("promo_on_moderation")), // Test failes on it
+                Arguments.of(List.of("promo_on_moderation")), // Test failes on it, but it provided in spec
                 Arguments.of(List.of("ads_topics", "black_list", "catalogs", "delayed_topics", "friends", "join_requests", "links", "maybe", "members", "moderators", "music_tracks", "new_paid_topics", "own_products", "paid_members", "paid_topics", "photo_albums", "photos", "pinned_topics", "presents", "products", "suggested_products", "suggested_topics", "themes", "unpublished_topics", "videos"))
         );
     }
@@ -172,6 +174,17 @@ public class GroupsGetCountersTest {
                 .extract().as(ErrorDTO.class);
         assertEquals(INVALID_PARAMETER_ERROR_CODE, error.getCode());
         assertTrue(INVALID_PARAMETER_MSG_PATTERN.matcher(error.getMessage()).find());
+    }
+
+    @Test
+    public void tryGetGroupCountersWithoutProvidingTypes() {
+        var error = defaultRequest()
+                .when()
+                .get()
+                .then()
+                .extract().as(ErrorDTO.class);
+        assertEquals(INVALID_PARAMETER_ERROR_CODE, error.getCode());
+        assertTrue(MISSING_REQUIRED_PARAMETR_MSG_PATTERN.matcher(error.getMessage()).find());
     }
 
 
