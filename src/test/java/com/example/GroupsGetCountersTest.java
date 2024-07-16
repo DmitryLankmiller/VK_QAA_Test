@@ -66,9 +66,15 @@ public class GroupsGetCountersTest {
     }
 
     @Test
-    public void getGroupMembers() {
+    public void shouldHaveResponseStatus200() {
         queryParams.put("counterTypes", "members");
         var request = given()
                 .spec(spec);
+        setQueryParamsToRequest(request);
+        request
+                .when()
+                .get()
+                .then()
+                .statusCode(200);
     }
 }
