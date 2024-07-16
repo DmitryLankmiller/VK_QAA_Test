@@ -118,6 +118,16 @@ public class GroupsGetCountersTest {
         );
     }
 
+    private static Stream<Arguments> getNotExistCounterTypes() {
+        return Stream.of(
+                Arguments.of(List.of("mems")),
+                Arguments.of(List.of("news")),
+                Arguments.of(List.of("suggestedPproducts")),
+                Arguments.of(List.of("rs", "mods")),
+                Arguments.of(List.of("ads", "list", "logs"))
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("getDifferentCounterTypes")
     public void shouldHaveResponseStatus200(List<String> counterTypes) {
@@ -136,5 +146,18 @@ public class GroupsGetCountersTest {
                 .get()
                 .then()
                 .extract().as(GroupsGetCountersDTO.class);
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("getNotExistCounterTypes")
+    public void tryGetNotExistCounters(List<String> counterTypes) {
+        var error = defaultRequest(counterTypes.toArray(new String[0]))
+                .when()
+                .get()
+                .then()
+                .extract().as(ErrorDTO.class);
+        assertEquals(INVALID_PARAMETER_ERROR_CODE, error.getCode());
+        assertTrue(INVALID_PARAMETER_MSG_PATTERN.matcher(error.getMessage()).find());
     }
 }
